@@ -20,4 +20,26 @@ void main() {
   test('duration format', () {
     expect(fmtDuration(134000), '02:14');
   });
+
+  test('greeting follows the time of day', () {
+    expect(greetingFor(DateTime(2026, 1, 1, 5, 0)), 'Good morning,');
+    expect(greetingFor(DateTime(2026, 1, 1, 11, 59)), 'Good morning,');
+    expect(greetingFor(DateTime(2026, 1, 1, 12, 0)), 'Good afternoon,');
+    expect(greetingFor(DateTime(2026, 1, 1, 18, 0)), 'Good afternoon,');
+    expect(greetingFor(DateTime(2026, 1, 1, 18, 1)), 'Good evening,');
+    expect(greetingFor(DateTime(2026, 1, 1, 23, 59)), 'Good evening,');
+    expect(greetingFor(DateTime(2026, 1, 1, 0, 30)), 'Still up,');
+    expect(greetingFor(DateTime(2026, 1, 1, 4, 59)), 'Still up,');
+    expect(isNightTime(DateTime(2026, 1, 1, 12, 0)), false);
+    expect(isNightTime(DateTime(2026, 1, 1, 19, 0)), true);
+  });
+
+  test('quote changes every hour', () {
+    for (var h = 1; h < 24; h++) {
+      final a = quoteIndex(DateTime(2026, 11, 23, h - 1), 50);
+      final b = quoteIndex(DateTime(2026, 11, 23, h), 50);
+      expect(a == b, false);
+      expect(b >= 0 && b < 50, true);
+    }
+  });
 }

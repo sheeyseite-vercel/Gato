@@ -61,43 +61,13 @@ class Splash extends StatelessWidget {
 
 // ---------- cat artwork ----------
 
-Path _head() => Path()
-  ..moveTo(12, 8)
-  ..lineTo(36, 26)
-  ..quadraticBezierTo(50, 23, 64, 26)
-  ..lineTo(88, 8)
-  ..lineTo(92, 52)
-  ..quadraticBezierTo(92, 92, 50, 94)
-  ..quadraticBezierTo(8, 92, 8, 52)
-  ..close();
-
+/// The cat as a transparent sticker (no circle, no background).
 class CatLogo extends StatelessWidget {
   final double size;
   const CatLogo({super.key, this.size = 56});
   @override
   Widget build(BuildContext context) =>
-      SizedBox(width: size, height: size, child: CustomPaint(painter: _LogoPainter()));
-}
-
-class _LogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas c, Size s) {
-    c.drawCircle(Offset(s.width / 2, s.height / 2), s.width / 2, Paint()..color = C.lime);
-    c.save();
-    c.translate(s.width * .16, s.height * .16);
-    c.scale(s.width * .68 / 100);
-    c.drawPath(_head(), Paint()..color = Colors.black);
-    final e = Paint()
-      ..color = C.eye
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6;
-    c.drawCircle(const Offset(34, 56), 11, e);
-    c.drawCircle(const Offset(66, 56), 11, e);
-    c.restore();
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter old) => false;
+      Image.asset('assets/cat.png', width: size, fit: BoxFit.contain);
 }
 
 /// The cat peeking over the top edge of a card (120 x 44).

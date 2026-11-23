@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../lock.dart';
 import '../pin_pad.dart';
+import '../profile.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -34,6 +35,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String get _autoLabel => _auto == 0 ? 'Immediately' : (_auto == 60 ? '1 min' : '${_auto ~/ 60} min');
+
+  Future<void> _editName() async {
+    final n = await askText(context, 'Your name', initial: Profile.name.value ?? '', hint: 'Your name');
+    if (n != null) await Profile.setName(n);
+  }
 
   Future<void> _togglePin(bool on) async {
     if (on) {
@@ -120,8 +126,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const name = 'GATO';
-    const email = 'Stored privately on this device';
     return Screen(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(22, 12, 22, 32),
@@ -132,19 +136,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text('Settings', style: disp(26)),
           ]),
           const SizedBox(height: 16),
-          Glass(
-            radius: 24,
-            padding: const EdgeInsets.all(12),
-            child: Row(children: [
-              const CatLogo(size: 52),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  dirText(name, disp(20), maxLines: 1),
-                  Text(email, style: txt(13, color: C.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ]),
-              ),
-            ]),
+          GestureDetector(
+            onTap: _editName,
+            child: Glass(
+              radius: 24,
+              padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                const CatLogo(size: 60),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ValueListenableBuilder<String?>(
+                    valueListenable: Profile.name,
+                    builder: (_, n, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      dirText(n ?? 'Add your name', disp(20), maxLines: 1),
+                      Text('Tap to edit your name', style: txt(13, color: C.muted)),
+                    ]),
+                  ),
+                ),
+                const Icon(Icons.edit_rounded, color: C.muted, size: 20),
+              ]),
+            ),
           ),
           if (_loaded) ...[
             _group('Privacy', [

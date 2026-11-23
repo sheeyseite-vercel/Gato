@@ -17,6 +17,7 @@ dependencies:
   audioplayers: ^6.1.0
   path_provider: ^2.1.4
   app_links: ^6.3.3
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -26,6 +27,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/cat.png
 
 flutter_launcher_icons:
   android: true

@@ -14,6 +14,7 @@ class Repo {
   static Map<String, List<Map<String, dynamic>>> _db = {};
   static late File _file;
   static late Directory _voiceDir;
+  static late Directory _stickerDir;
   static Future<void> _chain = Future.value();
 
   static Future<void> init() async {
@@ -21,6 +22,8 @@ class Repo {
     _file = File('${dir.path}/gato_data.json');
     _voiceDir = Directory('${dir.path}/voice');
     if (!await _voiceDir.exists()) await _voiceDir.create(recursive: true);
+    _stickerDir = Directory('${dir.path}/stickers');
+    if (!await _stickerDir.exists()) await _stickerDir.create(recursive: true);
     if (await _file.exists()) {
       try {
         final raw = jsonDecode(await _file.readAsString()) as Map<String, dynamic>;
@@ -115,5 +118,46 @@ class Repo {
       if (await f.exists()) await f.delete();
     } catch (_) {}
     await remove('gato_voice_memos', m['id'] as String);
+  }
+
+  static Future<String> saveSticker(String src) async {
+    final dest = '${_stickerDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    await File(src).copy(dest);
+    return dest;
+  }
+
+  static Future<void> deleteFile(String path) async {
+    try {
+      final f = File(path);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
+  /// day (yyyy-MM-dd) -> mood id. Home picks override moods set inside entries.
+  static Future<Map<String, String>> moodDays() async {
+    final out = <String, String>{};
+    final ents = await entries();
+    for (final e in ents.reversed) {
+      final m = e['mood'];
+      if (m is String && m.isNotEmpty) out['${e['entry_date']}'] = m;
+    }
+    final logs = await list('gato_moods');
+    for (final l in logs.reversed) {
+      final m = l['mood'];
+      if (m is String && m.isNotEmpty) out['${l['day']}'] = m;
+    }
+    return out;
+  }
+
+  static Future<void> setMood(String day, String mood) async {
+    final rows = _db.putIfAbsent('gato_moods', () => []);
+    final i = rows.indexWhere((r) => r['day'] == day);
+    if (i >= 0) {
+      rows[i] = {...rows[i], 'mood': mood};
+    } else {
+      rows.add({'id': _newId(), 'day': day, 'mood': mood, 'created_at': DateTime.now().toUtc().toIso8601String()});
+    }
+    await _persist();
+    bump();
   }
 }

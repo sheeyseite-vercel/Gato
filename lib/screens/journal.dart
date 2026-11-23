@@ -1,7 +1,10 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../logic.dart';
 import '../repo.dart';
+import '../stickers.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'voice.dart';
@@ -61,6 +64,18 @@ class JournalScreen extends StatelessWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 dirText(title.isEmpty ? 'Untitled' : title, disp(18), maxLines: 1),
+                if (((e['stickers'] as List?) ?? const []).isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Wrap(spacing: 6, runSpacing: 6, children: [
+                      for (final s in ((e['stickers'] as List).take(4)))
+                        StickerView(
+                          path: (s as Map)['path'] as String,
+                          shape: (s['shape'] as String?) ?? 'circle',
+                          size: 44,
+                        ),
+                    ]),
+                  ),
                 if (bodyText.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -91,6 +106,8 @@ class _EntryEditorState extends State<EntryEditor> {
   late String? _mood;
   late final List<String> _tags;
   late final DateTime _date;
+  late final List<Map<String, String>> _stickers;
+  final List<String> _removed = [];
   bool _skip = false, _failed = false;
 
   @override
@@ -101,6 +118,7 @@ class _EntryEditorState extends State<EntryEditor> {
     _body = TextEditingController(text: (e?['body'] as String?) ?? '');
     _mood = (e?['mood'] as String?) ?? widget.initialMood;
     _tags = List<String>.from((e?['tags'] as List?) ?? const []);
+    _stickers = ((e?['stickers'] as List?) ?? const []).map((s) => Map<String, String>.from(s as Map)).toList();
     _date = e != null ? (DateTime.tryParse(e['entry_date'] as String) ?? DateTime.now()) : DateTime.now();
   }
 
@@ -113,7 +131,7 @@ class _EntryEditorState extends State<EntryEditor> {
 
   Future<void> _save() async {
     final t = _title.text.trim(), b = _body.text.trim();
-    if (t.isEmpty && b.isEmpty) return;
+    if (t.isEmpty && b.isEmpty && _stickers.isEmpty) return;
     await Repo.save(
       'gato_entries',
       {
@@ -121,11 +139,16 @@ class _EntryEditorState extends State<EntryEditor> {
         'body': b,
         'mood': _mood,
         'tags': _tags,
+        'stickers': _stickers,
         'entry_date': dkey(_date),
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       },
       id: widget.entry?['id'] as String?,
     );
+    for (final p in _removed) {
+      await Repo.deleteFile(p);
+    }
+    _removed.clear();
   }
 
   Future<void> _close() async {
@@ -153,6 +176,9 @@ class _EntryEditorState extends State<EntryEditor> {
     }
     if (await confirm(context, 'Delete this entry?')) {
       try {
+        for (final s in _stickers) {
+          await Repo.deleteFile(s['path'] ?? '');
+        }
         await Repo.remove('gato_entries', id);
         _skip = true;
         if (mounted) Navigator.pop(context);
@@ -202,6 +228,77 @@ class _EntryEditorState extends State<EntryEditor> {
     } catch (_) {
       if (mounted) toast(context, "Couldn't save the quote.");
     }
+  }
+
+  Future<void> _addSticker() async {
+    final src = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: C.deep,
+      builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined, color: C.lime),
+            title: Text('Gallery', style: txt(16, w: FontWeight.w700)),
+            onTap: () => Navigator.pop(c, ImageSource.gallery),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined, color: C.lime),
+            title: Text('Camera', style: txt(16, w: FontWeight.w700)),
+            onTap: () => Navigator.pop(c, ImageSource.camera),
+          ),
+        ]),
+      ),
+    );
+    if (src == null) return;
+    try {
+      final x = await ImagePicker().pickImage(source: src, maxWidth: 700, maxHeight: 700, imageQuality: 82);
+      if (x == null) return;
+      final path = await Repo.saveSticker(x.path);
+      setState(() => _stickers.add({'path': path, 'shape': stickerShapes[Random().nextInt(stickerShapes.length)]}));
+    } catch (_) {
+      if (mounted) toast(context, "Couldn't add the photo.");
+    }
+  }
+
+  void _stickerMenu(int i) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: C.deep,
+      builder: (c) => StatefulBuilder(
+        builder: (c, set) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('Pick a shape', style: txt(16, w: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                for (final sh in stickerShapes)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _stickers[i]['shape'] = sh);
+                      set(() {});
+                    },
+                    child: Opacity(
+                      opacity: _stickers[i]['shape'] == sh ? 1 : .55,
+                      child: StickerView(path: _stickers[i]['path']!, shape: sh, size: 56),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () {
+                  _removed.add(_stickers[i]['path']!);
+                  setState(() => _stickers.removeAt(i));
+                  Navigator.pop(c);
+                },
+                icon: const Icon(Icons.delete_outline_rounded, color: C.orange),
+                label: Text('Remove', style: txt(15, color: C.orange, w: FontWeight.w700)),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 
   static const _tagColors = [C.mint, C.ice, C.mint];
@@ -309,6 +406,24 @@ class _EntryEditorState extends State<EntryEditor> {
                               hintStyle: txt(17, color: op(C.green, .4)).copyWith(height: 32 / 17)),
                         ),
                       ),
+                      if (_stickers.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Wrap(spacing: 8, runSpacing: 8, children: [
+                            for (var i = 0; i < _stickers.length; i++)
+                              GestureDetector(
+                                onTap: () => _stickerMenu(i),
+                                child: Transform.rotate(
+                                  angle: (i.isEven ? -1 : 1) * .06,
+                                  child: StickerView(
+                                    path: _stickers[i]['path']!,
+                                    shape: _stickers[i]['shape'] ?? 'circle',
+                                    size: 84,
+                                  ),
+                                ),
+                              ),
+                          ]),
+                        ),
                     ]),
                   ),
                   const Positioned(top: -43, right: 30, child: CatPeek()),
@@ -348,6 +463,7 @@ class _EntryEditorState extends State<EntryEditor> {
             ),
           ),
           PillBar(children: [
+            IconButton(tooltip: 'Photo sticker', onPressed: _addSticker, icon: const Icon(Icons.add_photo_alternate_outlined, color: C.muted)),
             IconButton(tooltip: 'Bullet', onPressed: _bullet, icon: const Icon(Icons.format_list_bulleted_rounded, color: C.muted)),
             IconButton(tooltip: 'Save as quote', onPressed: _saveQuote, icon: const Icon(Icons.format_quote_rounded, color: C.muted)),
             IconButton(tooltip: 'Delete', onPressed: _delete, icon: const Icon(Icons.delete_outline_rounded, color: C.muted)),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'gate.dart';
+import 'profile.dart';
 import 'screens/home.dart';
 import 'screens/journal.dart';
 import 'screens/notes.dart';
@@ -21,13 +22,22 @@ class _ShellState extends State<Shell> {
   void initState() {
     super.initState();
     Pending.action.addListener(_pending);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _pending());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pending();
+      _askName();
+    });
   }
 
   @override
   void dispose() {
     Pending.action.removeListener(_pending);
     super.dispose();
+  }
+
+  Future<void> _askName() async {
+    if (Profile.name.value != null || !mounted) return;
+    final n = await askText(context, 'What should we call you?', hint: 'Your name');
+    if (n != null) await Profile.setName(n);
   }
 
   void _pending() {
