@@ -37,6 +37,19 @@ jobs:
           mkdir -p ~/.android
           cp ci/debug.keystore ~/.android/debug.keystore
 
+      - name: Skip Android lint (crashes in a plugin on CI, not needed for the APK)
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/no-lint.gradle <<'EOT'
+          allprojects {
+            tasks.configureEach { t ->
+              if (t.name.startsWith('lintVital') || t.name.startsWith('lintAnalyze') || t.name.startsWith('lintReport')) {
+                t.enabled = false
+              }
+            }
+          }
+          EOT
+
       - run: flutter pub get
       - run: dart run flutter_launcher_icons
       - name: Analyze
