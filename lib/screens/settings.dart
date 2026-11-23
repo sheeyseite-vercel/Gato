@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../lock.dart';
 import '../pin_pad.dart';
-import '../repo.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -83,14 +82,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _signOut() async {
-    if (!await confirm(context, 'Sign out of GATO?', ok: 'Sign out')) return;
-    await Lock.clear();
-    await Lock.setSkipped(false);
-    await sb.auth.signOut();
-    if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
-  }
-
   Widget _row(String label, Widget trailing, {VoidCallback? onTap, bool first = false}) {
     return InkWell(
       onTap: onTap,
@@ -129,9 +120,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = sb.auth.currentUser;
-    final name = (user?.userMetadata?['full_name'] as String?) ?? 'GATO';
-    final email = user?.email ?? '';
+    const name = 'GATO';
+    const email = 'Stored privately on this device';
     return Screen(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(22, 12, 22, 32),
@@ -178,10 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _row('Text direction', _val('Auto')),
             ]),
             _group('Data', [
-              _row('Cloud sync', Text('On', style: txt(14, color: C.lime, w: FontWeight.w700)), first: true),
-            ]),
-            _group('Account', [
-              _row('Sign out', const Icon(Icons.logout_rounded, color: C.orange), onTap: _signOut, first: true),
+              _row('Storage', Text('This device', style: txt(14, color: C.lime, w: FontWeight.w700)), first: true),
             ]),
           ],
         ],

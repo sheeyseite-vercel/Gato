@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login.dart';
 import 'lock.dart';
 import 'pin_pad.dart';
-import 'repo.dart';
 import 'shell.dart';
 import 'widgets.dart';
 
@@ -21,27 +18,16 @@ class Gate extends StatefulWidget {
 }
 
 class _GateState extends State<Gate> with WidgetsBindingObserver {
-  Session? _session = sb.auth.currentSession;
   bool _ready = false, _hasPin = false, _skipped = false, _locked = false;
   DateTime? _pausedAt;
   String? _lastUri;
   DateTime _lastAt = DateTime.fromMillisecondsSinceEpoch(0);
-  StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _linkSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _authSub = sb.auth.onAuthStateChange.listen((s) {
-      if (!mounted) return;
-      setState(() => _session = s.session);
-      if (s.session == null) {
-        _load().then((_) {
-          if (mounted) setState(() => _locked = false);
-        });
-      }
-    });
     _load();
     _links();
   }
@@ -53,7 +39,7 @@ class _GateState extends State<Gate> with WidgetsBindingObserver {
     setState(() {
       _hasPin = h;
       _skipped = k;
-      _locked = _locked || (!_ready && h);
+      _locked = h;
       _ready = true;
     });
   }
@@ -108,7 +94,6 @@ class _GateState extends State<Gate> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _authSub?.cancel();
     _linkSub?.cancel();
     super.dispose();
   }
@@ -116,7 +101,6 @@ class _GateState extends State<Gate> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     if (!_ready) return const Splash();
-    if (_session == null) return const LoginScreen();
     if (!_hasPin && !_skipped) return SetPinScreen(onDone: _setupDone);
     if (_locked) return LockScreen(onUnlocked: () => setState(() => _locked = false));
     return const Shell();

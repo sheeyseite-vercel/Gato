@@ -18,7 +18,7 @@ perms = (
 if "RECORD_AUDIO" not in s:
     s = s.replace("<application", perms + "    <application", 1)
 s = re.sub(r'android:label="[^"]*"', 'android:label="GATO"', s, count=1)
-if "login-callback" not in s:
+if "flutter_deeplinking_enabled" not in s:
     if "</activity>" not in s:
         sys.exit("No </activity> in manifest")
     s = s.replace("</activity>", (overlay / "filters.xml").read_text() + "        </activity>", 1)

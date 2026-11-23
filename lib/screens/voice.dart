@@ -159,7 +159,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
       }
       final url = await Repo.voiceUrl(m['storage_path'] as String);
       await _player.stop();
-      await _player.play(UrlSource(url));
+      await _player.play(DeviceFileSource(url));
       setState(() => _playingId = id);
     } catch (e) {
       if (mounted) toast(context, "Couldn't play this memo.");
