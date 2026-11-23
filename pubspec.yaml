@@ -1,0 +1,36 @@
+name: gato
+description: GATO - daily journal, notes, quotes and voice memos.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.8.0
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.3.2
+  crypto: ^3.0.5
+  intl: ^0.19.0
+  record: ^6.0.0
+  audioplayers: ^6.1.0
+  path_provider: ^2.1.4
+  app_links: ^6.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon/icon.png
+  adaptive_icon_background: "#92FF5F"
+  adaptive_icon_foreground: assets/icon/icon_fg.png

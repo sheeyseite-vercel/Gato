@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="8dp"
+    android:background="@drawable/widget_bg">
+
+    <TextView
+        android:id="@+id/btn_write"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="Write"
+        android:textColor="#0F3B27"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/widget_btn_lime" />
+
+    <TextView
+        android:id="@+id/btn_voice"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="Voice"
+        android:textColor="#0F3B27"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/widget_btn_orange" />
+
+    <TextView
+        android:id="@+id/btn_quote"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_margin="4dp"
+        android:gravity="center"
+        android:text="Quote"
+        android:textColor="#0F3B27"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/widget_btn_ice" />
+</LinearLayout>
