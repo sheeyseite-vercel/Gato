@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 class C {
   static const green = Color(0xFF0F3B27);
   static const deep = Color(0xFF092619);
-  static const lime = Color(0xFF92FF5F);
+  static const lime = Color(0xFFCFF1D2); // main accent (mint)
+  static const signal = Color(0xFF92FF5F);
   static const orange = Color(0xFFFF7036);
   static const white = Color(0xFFF7F9F7);
   static const ice = Color(0xFFBFF2F0);

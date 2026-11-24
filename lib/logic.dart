@@ -46,12 +46,13 @@ bool isNightTime(DateTime t) {
   return m > 18 * 60 || m < 5 * 60;
 }
 
-int hourKey(DateTime d) => d.year * 1000000 + d.month * 10000 + d.day * 100 + d.hour;
+int hourCount(DateTime d) => DateTime.utc(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch ~/ 3600000;
 
-/// A different pseudo-random quote every hour (never the same as the previous hour).
-int quoteIndex(DateTime now, int count) {
-  int idx(DateTime d) => ((hourKey(d) * 2654435761) % 4294967296) % count;
-  final i = idx(now);
-  final prev = idx(DateTime(now.year, now.month, now.day, now.hour).subtract(const Duration(hours: 1)));
-  return i == prev ? (i + 1) % count : i;
+int dayCount(DateTime d) => DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/ 86400000;
+
+/// Short date such as "Tues Nov 24".
+String shortDate(DateTime d) {
+  const wd = ['Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat', 'Sun'];
+  const mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return '${wd[d.weekday - 1]} ${mo[d.month - 1]} ${d.day}';
 }

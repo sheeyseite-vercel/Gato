@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../logic.dart';
 import '../repo.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
 const _noteColors = <String, Color>{
   'lime': C.lime,
-  'mint': C.mint,
+  'mint': C.signal,
   'ice': C.ice,
   'orange': C.orange,
   'white': C.white,
@@ -137,6 +138,7 @@ class _NoteEditorState extends State<NoteEditor> {
   late final TextEditingController _body;
   late String _color;
   late bool _pinned;
+  late final DateTime _date;
   bool _skip = false, _failed = false;
 
   @override
@@ -147,6 +149,7 @@ class _NoteEditorState extends State<NoteEditor> {
     _body = TextEditingController(text: (n?['body'] as String?) ?? '');
     _color = (n?['color'] as String?) ?? 'lime';
     _pinned = n?['pinned'] == true;
+    _date = DateTime.tryParse('${n?['created_at'] ?? ''}')?.toLocal() ?? DateTime.now();
   }
 
   @override
@@ -256,6 +259,8 @@ class _NoteEditorState extends State<NoteEditor> {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(28)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Text(shortDate(_date), style: txt(12, color: op(C.green, .6), w: FontWeight.w700)),
+                    const SizedBox(height: 6),
                     TextField(
                       controller: _title,
                       onChanged: (_) => setState(() {}),

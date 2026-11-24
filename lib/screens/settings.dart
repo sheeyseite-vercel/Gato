@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../lock.dart';
 import '../pin_pad.dart';
 import '../profile.dart';
+import 'mood.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -158,6 +159,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           if (_loaded) ...[
+            _group('Insights', [
+              _row('Mood tracker', _val(''),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodScreen())),
+                  first: true),
+            ]),
             _group('Privacy', [
               _row(
                 'PIN lock',

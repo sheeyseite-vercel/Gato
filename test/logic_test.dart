@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gato/logic.dart';
+import 'package:gato/quotes_data.dart';
 
 void main() {
   test('streak counts consecutive days ending today or yesterday', () {
@@ -34,12 +35,21 @@ void main() {
     expect(isNightTime(DateTime(2026, 1, 1, 19, 0)), true);
   });
 
-  test('quote changes every hour', () {
-    for (var h = 1; h < 24; h++) {
-      final a = quoteIndex(DateTime(2026, 11, 23, h - 1), 50);
-      final b = quoteIndex(DateTime(2026, 11, 23, h), 50);
-      expect(a == b, false);
-      expect(b >= 0 && b < 50, true);
+  test('short date', () {
+    expect(shortDate(DateTime(2026, 11, 24)), 'Tues Nov 24');
+    expect(shortDate(DateTime(2026, 11, 26)), 'Thurs Nov 26');
+    expect(shortDate(DateTime(2026, 1, 5)), 'Mon Jan 5');
+  });
+
+  test('cat words never repeat within 10 cards', () {
+    expect(catWords.toSet().length, catWords.length);
+    expect(catWords.length >= 11, true);
+    for (var h = 0; h < 48; h++) {
+      final seen = <String>{};
+      for (var k = 0; k < 11; k++) {
+        seen.add(catWords[(hourCount(DateTime(2026, 11, 23, 0)) + h + k) % catWords.length]);
+      }
+      expect(seen.length, 11);
     }
   });
 }

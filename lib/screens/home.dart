@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../logic.dart';
+import '../lying_cat.dart';
 import '../profile.dart';
 import '../quotes_data.dart';
 import '../repo.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'mood.dart';
+import 'journal.dart';
 import 'settings.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,15 +18,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Timer? _clock;
-  int _msg = 0;
-  bool _changing = false;
+  Timer? _clock, _msgTimer;
+  int _msg = 0, _catTap = 0;
+  bool _showMsg = false;
   String? _picked;
 
   @override
   void initState() {
     super.initState();
-    _loadMsg();
     _clock = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -36,26 +34,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _clock?.cancel();
+    _msgTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadMsg() async {
-    final p = await SharedPreferences.getInstance();
-    final parts = (p.getString('home_msg') ?? '').split('|');
-    if (parts.length == 2 && parts[0] == dkey(DateTime.now())) {
-      if (mounted) setState(() => _msg = int.tryParse(parts[1]) ?? 0);
-    }
   }
 
   Future<void> _pick(Mood m) async {
     final idx = Random().nextInt(moodMessages[m.id]!.length);
+    _msgTimer?.cancel();
     setState(() {
       _msg = idx;
-      _changing = false;
       _picked = m.id;
+      _showMsg = true;
     });
-    final p = await SharedPreferences.getInstance();
-    await p.setString('home_msg', '${dkey(DateTime.now())}|$idx');
+    _msgTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _showMsg = false);
+    });
     try {
       await Repo.setMood(dkey(DateTime.now()), m.id);
     } catch (_) {}
@@ -68,8 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _content(BuildContext context, Map<String, String> moods) {
     final now = DateTime.now();
     final night = isNightTime(now);
-    final today = _changing ? null : moodById(_picked ?? moods[dkey(now)]);
-    final quote = quotePool[quoteIndex(now, quotePool.length)];
+    final current = _picked ?? moods[dkey(now)];
+    final pickedMood = moodById(_picked);
+    final prompt = prompts[dayCount(now) % prompts.length];
+    final word = catWords[(hourCount(now) + _catTap) % catWords.length];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 120),
@@ -77,8 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(DateFormat('EEEE · MMM d').format(now), style: txt(14, color: C.muted)),
-              const SizedBox(height: 4),
               Text(greetingFor(now), style: disp(34)),
               ValueListenableBuilder<String?>(
                 valueListenable: Profile.name,
@@ -99,49 +92,32 @@ class _HomeScreenState extends State<HomeScreen> {
             opacity: anim,
             child: SizeTransition(sizeFactor: anim, axisAlignment: -1, child: child),
           ),
-          child: today == null ? _ask(night) : _answer(today),
+          child: (_showMsg && pickedMood != null) ? _answer(pickedMood) : _ask(night, current),
         ),
-        Stack(clipBehavior: Clip.none, children: [
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(top: 58),
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-            decoration: const BoxDecoration(
-              color: C.lime,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(28),
-                topRight: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-                bottomLeft: Radius.circular(8),
-              ),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('”', style: disp(60, color: op(C.green, .35)).copyWith(height: .8)),
-              Text(quote, style: disp(22, color: C.green).copyWith(height: 1.4)),
-              const SizedBox(height: 6),
-              Text('Quote of the day', style: txt(13, color: C.green, w: FontWeight.w700)),
-            ]),
-          ),
-          const Positioned(top: 15, right: 30, child: CatPeek()),
-        ]),
+        const SizedBox(height: 14),
+        LyingCatCard(word: word, onTap: () => setState(() => _catTap++)),
         const SizedBox(height: 14),
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodScreen())),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => EntryEditor(prompt: prompt))),
           child: Glass(
             radius: 24,
-            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Expanded(child: Text('Your mood this week', style: txt(15, w: FontWeight.w700))),
-                const Icon(Icons.chevron_right_rounded, color: C.muted),
-              ]),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  for (var i = 6; i >= 0; i--) _dayFace(DateTime(now.year, now.month, now.day - i), moods),
+            padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+            child: Row(children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(color: C.lime, shape: BoxShape.circle),
+                child: const Icon(Icons.edit_rounded, color: C.green, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text("TODAY'S PROMPT", style: txt(11, color: C.lime, w: FontWeight.w700).copyWith(letterSpacing: 1)),
+                  const SizedBox(height: 4),
+                  Text(prompt, style: disp(18).copyWith(height: 1.3)),
                 ]),
               ),
+              const Icon(Icons.chevron_right_rounded, color: C.muted),
             ]),
           ),
         ),
@@ -149,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _ask(bool night) {
+  Widget _ask(bool night, String? currentId) {
     return Glass(
       key: const ValueKey('ask'),
       radius: 28,
@@ -157,7 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(night ? 'How was your day?' : "How's your day?", style: disp(26)),
         const SizedBox(height: 2),
-        Text('Tap the face that fits.', style: txt(14, color: C.muted)),
+        Text(currentId == null ? 'Tap the face that fits.' : 'Tap again any time to change it.',
+            style: txt(14, color: C.muted)),
         const SizedBox(height: 16),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           for (final m in moodList)
@@ -166,7 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SizedBox(
                 width: 64,
                 child: Column(children: [
-                  MoodFace(m, size: 56),
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: currentId == m.id ? C.white : Colors.transparent, width: 2),
+                    ),
+                    child: MoodFace(m, size: 50),
+                  ),
                   const SizedBox(height: 6),
                   Text(m.label, style: txt(12)),
                 ]),
@@ -182,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       key: ValueKey('answer-${m.id}-$_msg'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
       decoration: BoxDecoration(
         color: op(m.color, .14),
         borderRadius: BorderRadius.circular(28),
@@ -196,24 +180,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ]),
         const SizedBox(height: 14),
         Text(msgs[_msg % msgs.length], style: disp(22).copyWith(height: 1.35)),
-        const SizedBox(height: 12),
-        GChip('Change', onTap: () => setState(() => _changing = true)),
+        const SizedBox(height: 14),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 1.0, end: 0.0),
+          duration: const Duration(seconds: 5),
+          builder: (_, v, __) => ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(value: v, minHeight: 4, color: m.color, backgroundColor: op(C.white, .1)),
+          ),
+        ),
       ]),
     );
-  }
-
-  Widget _dayFace(DateTime d, Map<String, String> moods) {
-    final m = moodById(moods[dkey(d)]);
-    return Column(children: [
-      m != null
-          ? MoodFace(m, size: 34)
-          : Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: op(C.white, .25))),
-            ),
-      const SizedBox(height: 4),
-      Text(DateFormat('E').format(d)[0], style: txt(12, color: C.muted)),
-    ]);
   }
 }

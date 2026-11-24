@@ -17,7 +17,7 @@ class Backdrop extends StatelessWidget {
               gradient: RadialGradient(
                 center: const Alignment(1.1, -1.1),
                 radius: 1.0,
-                colors: [op(C.lime, .30), Colors.transparent],
+                colors: [op(C.lime, .22), Colors.transparent],
               ),
             ),
           ),
@@ -103,6 +103,69 @@ class _PeekPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter old) => false;
 }
 
+/// The cat's belly, paws and tail hanging under a card (170 x 44).
+class CatBody extends StatelessWidget {
+  final bool mirror;
+  const CatBody({super.key, this.mirror = false});
+  @override
+  Widget build(BuildContext context) =>
+      SizedBox(width: 170, height: 44, child: CustomPaint(painter: _BodyPainter(mirror)));
+}
+
+class _BodyPainter extends CustomPainter {
+  final bool mirror;
+  _BodyPainter(this.mirror);
+
+  @override
+  void paint(Canvas c, Size s) {
+    if (mirror) {
+      c.translate(s.width, 0);
+      c.scale(-1, 1);
+    }
+    final black = Paint()..color = Colors.black;
+    final belly = Path()
+      ..moveTo(14, 0)
+      ..cubicTo(14, 30, 34, 40, 61, 40)
+      ..cubicTo(88, 40, 108, 30, 108, 0)
+      ..close();
+    c.drawPath(belly, black);
+    c.drawOval(Rect.fromCenter(center: const Offset(40, 38), width: 24, height: 13), black);
+    c.drawOval(Rect.fromCenter(center: const Offset(82, 38), width: 24, height: 13), black);
+    final tail = Path()
+      ..moveTo(104, 12)
+      ..cubicTo(138, 26, 166, 22, 160, 3);
+    c.drawPath(
+        tail,
+        Paint()
+          ..color = Colors.black
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 9
+          ..strokeCap = StrokeCap.round);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BodyPainter old) => old.mirror != mirror;
+}
+
+/// A card with the cat split around it: head above, belly and tail below.
+class CatCard extends StatelessWidget {
+  final Widget child;
+  final bool left;
+  const CatCard({super.key, required this.child, this.left = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 43, bottom: 44),
+      child: Stack(clipBehavior: Clip.none, children: [
+        child,
+        Positioned(top: -43, left: left ? 30 : null, right: left ? null : 30, child: const CatPeek()),
+        Positioned(bottom: -44, left: left ? 30 : null, right: left ? null : 29, child: CatBody(mirror: !left)),
+      ]),
+    );
+  }
+}
+
 // ---------- moods ----------
 
 class Mood {
@@ -113,8 +176,8 @@ class Mood {
 
 const moodList = [
   Mood('great', 'Great', C.lime, 'big'),
-  Mood('good', 'Good', C.mint, 'smile'),
-  Mood('okay', 'Okay', C.ice, 'flat'),
+  Mood('good', 'Good', C.ice, 'smile'),
+  Mood('okay', 'Okay', C.white, 'flat'),
   Mood('tired', 'Tired', C.orange, 'sad'),
 ];
 

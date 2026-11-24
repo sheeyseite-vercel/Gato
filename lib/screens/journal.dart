@@ -94,7 +94,8 @@ class JournalScreen extends StatelessWidget {
 class EntryEditor extends StatefulWidget {
   final Map<String, dynamic>? entry;
   final String? initialMood;
-  const EntryEditor({super.key, this.entry, this.initialMood});
+  final String? prompt;
+  const EntryEditor({super.key, this.entry, this.initialMood, this.prompt});
 
   @override
   State<EntryEditor> createState() => _EntryEditorState();
@@ -364,9 +365,10 @@ class _EntryEditorState extends State<EntryEditor> {
                       ),
                     ),
                 ]),
-                const SizedBox(height: 50),
-                Stack(clipBehavior: Clip.none, children: [
-                  Container(
+                const SizedBox(height: 4),
+                CatCard(
+                  left: false,
+                  child: Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 340),
                     padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
@@ -402,7 +404,7 @@ class _EntryEditorState extends State<EntryEditor> {
                           cursorColor: C.green,
                           style: txt(17, color: C.green).copyWith(height: 32 / 17),
                           decoration: InputDecoration.collapsed(
-                              hintText: "Write what's on your mind…",
+                              hintText: widget.prompt ?? "Write what's on your mind…",
                               hintStyle: txt(17, color: op(C.green, .4)).copyWith(height: 32 / 17)),
                         ),
                       ),
@@ -426,8 +428,7 @@ class _EntryEditorState extends State<EntryEditor> {
                         ),
                     ]),
                   ),
-                  const Positioned(top: -43, right: 30, child: CatPeek()),
-                ]),
+                ),
                 const SizedBox(height: 16),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   for (var i = 0; i < _tags.length; i++)

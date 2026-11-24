@@ -203,9 +203,10 @@ class _VoiceScreenState extends State<VoiceScreen> {
               ),
             ]),
           ),
-          const SizedBox(height: 48),
-          Stack(clipBehavior: Clip.none, children: [
-            Glass(
+          const SizedBox(height: 4),
+          CatCard(
+            left: true,
+            child: Glass(
               radius: 28,
               padding: EdgeInsets.zero,
               child: SizedBox(
@@ -221,8 +222,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
                 ]),
               ),
             ),
-            const Positioned(top: -43, left: 30, child: CatPeek()),
-          ]),
+          ),
           const SizedBox(height: 26),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             if (rec)
