@@ -6,7 +6,7 @@ import '../widgets.dart';
 
 const _noteColors = <String, Color>{
   'lime': C.lime,
-  'mint': C.signal,
+  'mint': C.mint,
   'ice': C.ice,
   'orange': C.orange,
   'white': C.white,
